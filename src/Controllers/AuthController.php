@@ -44,7 +44,8 @@ class AuthController
             $token = Jwt::encode([
                 'sub' => $user['id'],
                 'username' => $user['username'],
-                'role_id' => $user['role_id']
+                'role_id' => $user['role_id'],
+                'role' => $user['role']
             ]);
 
             Response::json([

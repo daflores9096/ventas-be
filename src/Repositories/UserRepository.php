@@ -19,7 +19,12 @@ class UserRepository
      */
     public function findByUsername(string $username): ?array
     {
-        $stmt = $this->db->prepare("SELECT * FROM users WHERE username = :username LIMIT 1");
+        $stmt = $this->db->prepare("
+        SELECT users.*, roles.name AS role
+        FROM users
+        JOIN roles ON roles.id = users.role_id
+        WHERE username = :username
+        LIMIT 1");
         $stmt->execute(['username' => $username]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
         return $user ?: null;

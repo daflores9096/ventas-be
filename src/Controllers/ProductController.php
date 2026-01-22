@@ -18,15 +18,26 @@ class ProductController
      * Lista todos los productos
      * GET /api/products
      */
-    public function list(): void
+    public function list(object $user): void
     {
         try {
-            $products = $this->productService->getAll();
+            $search = isset($_GET['search'])
+                ? (is_array($_GET['search']) ? trim($_GET['search'][0]) : trim($_GET['search']))
+                : '';
+
+            if ($search !== '') {
+                $products = $this->productService->search($search);
+            } else {
+                $products = $this->productService->getAll();
+            }
+
             Response::json(['status' => 'success', 'data' => $products]);
+
         } catch (Exception $e) {
             Response::error('Error al obtener productos: ' . $e->getMessage(), 500);
         }
     }
+
 
     /**
      * Crea un nuevo producto
@@ -38,6 +49,7 @@ class ProductController
         $name = $input['name'] ?? null;
         $price = $input['price'] ?? null;
         $stock = $input['stock'] ?? 0;
+        $barcode = $input['barcode'] ?? 0;
 
         if (!$name || !$price) {
             Response::error('Campos obligatorios: name, price', 400);
@@ -45,7 +57,7 @@ class ProductController
         }
 
         try {
-            $product = $this->productService->create($name, $price, $stock);
+            $product = $this->productService->create($name, $price, $stock, $barcode);
             Response::json([
                 'status' => 'success',
                 'data' => $product
@@ -65,9 +77,10 @@ class ProductController
         $name = $input['name'] ?? null;
         $price = $input['price'] ?? null;
         $stock = $input['stock'] ?? null;
+        $barcode = $input['barcode'] ?? null;
 
         try {
-            $updated = $this->productService->update($id, $name, $price, $stock);
+            $updated = $this->productService->update($id, $name, $price, $stock, $barcode);
 
             if (!$updated) {
                 Response::error('Producto no encontrado o sin cambios', 404);
@@ -98,4 +111,33 @@ class ProductController
             Response::error('Error al eliminar producto: ' . $e->getMessage(), 500);
         }
     }
+
+    public function import(): void
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+
+        if (!isset($input['products']) || !is_array($input['products'])) {
+            Response::error('Formato inválido', 422);
+            return;
+        }
+
+        $service = new ProductService();
+
+        try {
+            $result = $service->importFromExcel($input['products']);
+
+            Response::json([
+                'status' => 'success',
+                'data' => $result
+            ], 200);
+
+        } catch (\Throwable $e) {
+            Response::json([
+                'status' => 'error',
+                'message' => 'Error al importar productos',
+                'detail' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 }

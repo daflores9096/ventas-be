@@ -12,8 +12,13 @@ if (str_starts_with($path, '/api/products')) {
 
     $controller = new ProductController();
 
-    if ($path === '/api/products' && $method === 'GET') {
-        $controller->list();
+    // 👉 NUEVA RUTA: importación desde Excel
+    if ($path === '/api/products/import' && $method === 'POST') {
+        $controller->import();
+    }
+    // Rutas existentes
+    elseif ($path === '/api/products' && $method === 'GET') {
+        $controller->list($user);
     } elseif ($path === '/api/products' && $method === 'POST') {
         $controller->create();
     } elseif (preg_match('#^/api/products/(\d+)$#', $path, $matches)) {

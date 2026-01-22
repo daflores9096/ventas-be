@@ -30,8 +30,8 @@ class ProductRepository
     public function create(array $data): array
     {
         $stmt = $this->db->prepare("
-            INSERT INTO products (name, price, stock)
-            VALUES (:name, :price, :stock)
+            INSERT INTO products (name, price, stock, barcode)
+            VALUES (:name, :price, :stock, :barcode)
         ");
         $stmt->execute($data);
 
@@ -39,11 +39,12 @@ class ProductRepository
             'id' => (int)$this->db->lastInsertId(),
             'name' => $data['name'],
             'price' => $data['price'],
-            'stock' => $data['stock']
+            'stock' => $data['stock'],
+            'barcode' => $data['barcode']
         ];
     }
 
-    public function update(int $id, ?string $name, ?float $price, ?int $stock): bool
+    public function update(int $id, ?string $name, ?float $price, ?int $stock, ?int $barcode): bool
     {
         $fields = [];
         $params = ['id' => $id];
@@ -51,6 +52,7 @@ class ProductRepository
         if ($name !== null) { $fields[] = "name = :name"; $params['name'] = $name; }
         if ($price !== null) { $fields[] = "price = :price"; $params['price'] = $price; }
         if ($stock !== null) { $fields[] = "stock = :stock"; $params['stock'] = $stock; }
+        if ($barcode !== null) { $fields[] = "barcode = :barcode"; $params['barcode'] = $barcode; }
 
         if (empty($fields)) return false;
 
@@ -73,5 +75,52 @@ class ProductRepository
         $stmt = $this->db->prepare("DELETE FROM products WHERE id = :id");
         $stmt->execute(['id' => $id]);
         return $stmt->rowCount() > 0;
+    }
+
+    public function search(string $query): array
+    {
+        $stmt = $this->db->prepare("
+        SELECT *
+        FROM products
+        WHERE name LIKE :s1
+        OR (barcode IS NOT NULL AND barcode LIKE :s2)
+        ORDER BY id DESC
+    ");
+
+        $value = "%$query%";
+
+        $stmt->execute([
+            's1' => $value,
+            's2' => $value
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function barcodeExists(string $barcode): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT 1 FROM products WHERE barcode = :barcode LIMIT 1"
+        );
+        $stmt->execute(['barcode' => $barcode]);
+
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function bulkInsert(array $data): void
+    {
+        $stmt = $this->db->prepare("
+        INSERT INTO products (name, price, price_sale, stock, barcode, brand)
+        VALUES (:name, :price, :price_sale, :stock, :barcode, :brand)
+    ");
+
+        $stmt->execute([
+            'name'       => $data['name'],
+            'price'      => $data['price'],
+            'price_sale' => $data['price_sale'],
+            'stock'      => $data['stock'],
+            'barcode'    => $data['barcode'],
+            'brand'      => $data['brand']
+        ]);
     }
 }

@@ -46,10 +46,65 @@ class SaleController
     public function list(object $user): void
     {
         try {
-            $sales = $this->saleService->getSalesByUser($user->sub, $user->role_id);
-            Response::json(['status' => 'success', 'data' => $sales]);
+            $filters = [
+                'page' => (int)($_GET['page'] ?? 1),
+                'limit' => (int)($_GET['limit'] ?? 10),
+                'status' => $_GET['status'] ?? null,
+                'from' => $_GET['from'] ?? null,
+                'to' => $_GET['to'] ?? null,
+                'q' => $_GET['q'] ?? null,
+            ];
+
+            $data = $this->saleService->paginate($filters);
+
+            Response::json([
+                'status' => 'success',
+                'data' => $data
+            ]);
         } catch (Exception $e) {
-            Response::error('Error al obtener ventas: ' . $e->getMessage(), 500);
+            Response::error($e->getMessage(), 500);
         }
     }
+
+    /**
+     * Obtener detalle de una venta
+     * GET /api/sales/{id}
+     */
+    public function detail(int $id, object $user): void
+    {
+        try {
+            $sale = $this->saleService->getSaleDetail($id, $user->sub, $user->role_id);
+
+            Response::json([
+                'status' => 'success',
+                'data' => $sale
+            ]);
+        } catch (Exception $e) {
+            Response::error('Error al obtener detalle de venta: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Anular venta
+     * POST /api/sales/{id}/cancel
+     */
+    public function cancel(int $id, object $user): void
+    {
+        try {
+            // Solo admin / superadmin pueden anular
+            AuthMiddleware::authorize(['admin', 'superadmin'], $user);
+
+            // Llamada a la función del servicio, pasando el usuario
+            $this->saleService->cancelSale($id, $user);
+
+            Response::json([
+                'status' => 'success',
+                'message' => 'Venta anulada correctamente'
+            ]);
+        } catch (Exception $e) {
+            Response::error($e->getMessage(), 400);
+        }
+    }
+
+
 }
