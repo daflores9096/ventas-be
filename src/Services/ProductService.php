@@ -18,15 +18,24 @@ class ProductService
         return $this->productRepository->findAll();
     }
 
-    public function create(string $name, float $price, int $stock = 0, int $barcode= 0): array
-    {
+    public function create(
+        string $name,
+        float $price,
+        float $priceSale,
+        int $stock = 0,
+        ?string $barcode = null,
+        ?string $brand = null
+    ): array {
         return $this->productRepository->create([
             'name' => $name,
             'price' => $price,
+            'price_sale' => $priceSale,
             'stock' => $stock,
-            'barcode' => $barcode
+            'barcode' => $barcode,
+            'brand' => $brand
         ]);
     }
+
 
     public function update(int $id, ?string $name, ?float $price, ?int $stock, ?int $barcode): bool
     {

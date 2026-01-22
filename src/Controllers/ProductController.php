@@ -46,26 +46,45 @@ class ProductController
     public function create(): void
     {
         $input = json_decode(file_get_contents('php://input'), true);
+
         $name = $input['name'] ?? null;
         $price = $input['price'] ?? null;
+        $priceSale = $input['price_sale'] ?? null;
         $stock = $input['stock'] ?? 0;
-        $barcode = $input['barcode'] ?? 0;
+        $barcode = $input['barcode'] ?? null;
+        $brand = $input['brand'] ?? null;
 
-        if (!$name || !$price) {
-            Response::error('Campos obligatorios: name, price', 400);
+        if (!$name || $price === null || $priceSale === null) {
+            Response::error(
+                'Campos obligatorios: name, price, price_sale',
+                422
+            );
             return;
         }
 
         try {
-            $product = $this->productService->create($name, $price, $stock, $barcode);
+            $product = $this->productService->create(
+                $name,
+                $price,
+                $priceSale,
+                $stock,
+                $barcode,
+                $brand
+            );
+
             Response::json([
                 'status' => 'success',
                 'data' => $product
             ], 201);
+
         } catch (Exception $e) {
-            Response::error('Error al crear producto: ' . $e->getMessage(), 500);
+            Response::error(
+                'Error al crear producto: ' . $e->getMessage(),
+                500
+            );
         }
     }
+
 
     /**
      * Actualiza un producto existente

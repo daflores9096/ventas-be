@@ -30,17 +30,20 @@ class ProductRepository
     public function create(array $data): array
     {
         $stmt = $this->db->prepare("
-            INSERT INTO products (name, price, stock, barcode)
-            VALUES (:name, :price, :stock, :barcode)
-        ");
+        INSERT INTO products (name, price, price_sale, stock, barcode, brand)
+        VALUES (:name, :price, :price_sale, :stock, :barcode, :brand)
+    ");
+
         $stmt->execute($data);
 
         return [
             'id' => (int)$this->db->lastInsertId(),
             'name' => $data['name'],
             'price' => $data['price'],
+            'price_sale' => $data['price_sale'],
             'stock' => $data['stock'],
-            'barcode' => $data['barcode']
+            'barcode' => $data['barcode'],
+            'brand' => $data['brand']
         ];
     }
 
